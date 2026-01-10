@@ -20,7 +20,7 @@ local function CheckAdminKey()
     return false
 end
 
--- Function Check Whitelist
+-- Function Check Whitelist (USERNAME ONLY FORMAT)
 local function CheckWhitelist()
     local success, response = pcall(function()
         return game:HttpGet(WhitelistURL)
@@ -32,7 +32,10 @@ local function CheckWhitelist()
         
         if data.User then
             for _, user in pairs(data.User) do
-                if user.username == username then
+                -- Support both formats: string username or table with username field
+                local whitelistUsername = type(user) == "string" and user or user.username
+                
+                if whitelistUsername == username then
                     return true
                 end
             end
