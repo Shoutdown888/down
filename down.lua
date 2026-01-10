@@ -1,12 +1,24 @@
--- SCRIPT A - PROTECTED ORIGINAL
+-- SCRIPT A - PROTECTED ORIGINAL (WITH ADMIN KEY)
 -- Upload ke: https://raw.githubusercontent.com/USERNAME/REPO/main/down.lua
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- SECRET ADMIN KEY
+local ADMIN_SECRET_KEY = "ADMIN"
+
 -- Whitelist URL (ubah sesuai kebutuhan)
 local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/main/whitelist.json"
+
+-- Function Check Admin Key
+local function CheckAdminKey()
+    -- Check if global admin key exists
+    if _G.ADMIN_KEY == ADMIN_SECRET_KEY then
+        return true
+    end
+    return false
+end
 
 -- Function Check Whitelist
 local function CheckWhitelist()
@@ -81,24 +93,39 @@ local AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 
 task.wait(1.5)
 
 AuthScreen:Destroy()
-AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking whitelist database...")
-task.wait(1.5)
+AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking admin key...")
+task.wait(0.5)
 
-local isWhitelisted = CheckWhitelist()
+-- Check Admin Key First
+local hasAdminAccess = CheckAdminKey()
 
-if not isWhitelisted then
+if hasAdminAccess then
     AuthScreen:Destroy()
-    local DeniedScreen = ShowAuthScreen("❌ ACCESS DENIED", Color3.fromRGB(255, 0, 0), "Whitelist access required!\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name)
-    task.wait(3)
-    DeniedScreen:Destroy()
-    LocalPlayer:Kick("❌ ACCESS DENIED - WHITELIST ONLY\n\n🔒 This script is protected\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name .. "\n\nContact owner for access")
-    return
-end
+    local AdminScreen = ShowAuthScreen("👑 ADMIN ACCESS", Color3.fromRGB(255, 215, 0), "Admin key verified!")
+    task.wait(1.5)
+    AdminScreen:Destroy()
+else
+    -- Check Whitelist if no admin key
+    AuthScreen:Destroy()
+    AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking whitelist database...")
+    task.wait(1.5)
 
-AuthScreen:Destroy()
-local GrantedScreen = ShowAuthScreen("✓ ACCESS GRANTED", Color3.fromRGB(0, 255, 0), "Welcome to the script!")
-task.wait(1.5)
-GrantedScreen:Destroy()
+    local isWhitelisted = CheckWhitelist()
+
+    if not isWhitelisted then
+        AuthScreen:Destroy()
+        local DeniedScreen = ShowAuthScreen("❌ ACCESS DENIED", Color3.fromRGB(255, 0, 0), "Whitelist access required!\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name)
+        task.wait(3)
+        DeniedScreen:Destroy()
+        LocalPlayer:Kick("❌ ACCESS DENIED - WHITELIST ONLY\n\n🔒 This script is protected\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name .. "\n\nContact owner for access")
+        return
+    end
+
+    AuthScreen:Destroy()
+    local GrantedScreen = ShowAuthScreen("✓ ACCESS GRANTED", Color3.fromRGB(0, 255, 0), "Welcome to the script!")
+    task.wait(1.5)
+    GrantedScreen:Destroy()
+end
 
 -- Load Main Script UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
@@ -124,7 +151,11 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("🏠 Main", 4483362458)
 local MainSection = MainTab:CreateSection("Premium Features")
 
-MainTab:CreateLabel("✓ Whitelist Access Active")
+if hasAdminAccess then
+    MainTab:CreateLabel("👑 ADMIN ACCESS ACTIVE")
+else
+    MainTab:CreateLabel("✓ Whitelist Access Active")
+end
 MainTab:CreateLabel("🔒 Protected Script")
 
 MainTab:CreateButton({
@@ -206,6 +237,10 @@ local InfoSection = InfoTab:CreateSection("User Information")
 
 InfoTab:CreateLabel("Username: " .. LocalPlayer.Name)
 InfoTab:CreateLabel("UserID: " .. LocalPlayer.UserId)
-InfoTab:CreateLabel("Access Level: ✓ WHITELISTED")
+if hasAdminAccess then
+    InfoTab:CreateLabel("Access Level: 👑 ADMIN")
+else
+    InfoTab:CreateLabel("Access Level: ✓ WHITELISTED")
+end
 InfoTab:CreateLabel("Version: 1.0.0")
 InfoTab:CreateLabel("Status: Protected Original")
