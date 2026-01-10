@@ -1,24 +1,23 @@
--- SCRIPT A - ORIGINAL VERSION (PROTECTED)
--- Upload ini ke: https://raw.githubusercontent.com/Shoutdown888/down/refs/heads/main/down.lua
+-- SCRIPT A - PROTECTED ORIGINAL
+-- Upload ke: https://raw.githubusercontent.com/USERNAME/REPO/main/down.lua
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Whitelist URL (Admin Only)
-local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/refs/heads/main/whitelist.json"
+-- Whitelist URL (ubah sesuai kebutuhan)
+local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/main/whitelist.json"
 
 -- Anti-Tamper Protection
-local _originalHttpGet = game.HttpGet
 local _checkedWhitelist = false
 
--- Fungsi Check Whitelist
+-- Function Check Whitelist
 local function CheckWhitelist()
     if _checkedWhitelist then return false end
     _checkedWhitelist = true
     
     local success, response = pcall(function()
-        return _originalHttpGet(game, WhitelistURL)
+        return game:HttpGet(WhitelistURL)
     end)
     
     if success then
@@ -37,7 +36,7 @@ local function CheckWhitelist()
     return false
 end
 
--- Loading Screen
+-- Loading Screen Function
 local function ShowAuthScreen(status, color, message)
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "AuthScreen_" .. math.random(1000, 9999)
@@ -64,7 +63,7 @@ local function ShowAuthScreen(status, color, message)
     SubTitle.Size = UDim2.new(0, 500, 0, 30)
     SubTitle.Position = UDim2.new(0.5, -250, 0.48, 0)
     SubTitle.BackgroundTransparency = 1
-    SubTitle.Text = "🔒 PROTECTED BY SHOUTDOWN"
+    SubTitle.Text = "🔒 PROTECTED SCRIPT"
     SubTitle.TextColor3 = Color3.fromRGB(100, 100, 255)
     SubTitle.TextSize = 16
     SubTitle.Font = Enum.Font.GothamBold
@@ -84,40 +83,40 @@ local function ShowAuthScreen(status, color, message)
 end
 
 -- Authentication Process
-local AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Verifying admin access...")
-wait(1.5)
+local AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Verifying access...")
+task.wait(1.5)
 
 AuthScreen:Destroy()
 AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking whitelist database...")
-wait(1.5)
+task.wait(1.5)
 
 local isWhitelisted = CheckWhitelist()
 
 if not isWhitelisted then
     AuthScreen:Destroy()
-    local DeniedScreen = ShowAuthScreen("❌ ACCESS DENIED", Color3.fromRGB(255, 0, 0), "Admin access required!\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name)
-    wait(3)
+    local DeniedScreen = ShowAuthScreen("❌ ACCESS DENIED", Color3.fromRGB(255, 0, 0), "Whitelist access required!\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name)
+    task.wait(3)
     DeniedScreen:Destroy()
-    LocalPlayer:Kick("❌ ACCESS DENIED - ADMIN ONLY\n\n🔒 This script is protected\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name .. "\n\n© Shoutdown888")
+    LocalPlayer:Kick("❌ ACCESS DENIED - WHITELIST ONLY\n\n🔒 This script is protected\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name .. "\n\nContact owner for access")
     return
 end
 
 AuthScreen:Destroy()
-local GrantedScreen = ShowAuthScreen("✓ ACCESS GRANTED", Color3.fromRGB(0, 255, 0), "Welcome, Admin!")
-wait(1.5)
+local GrantedScreen = ShowAuthScreen("✓ ACCESS GRANTED", Color3.fromRGB(0, 255, 0), "Welcome to the script!")
+task.wait(1.5)
 GrantedScreen:Destroy()
 
--- Load Main Script
+-- Load Main Script UI
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "Shoutdown Script - Premium",
-   LoadingTitle = "Admin Access Granted",
-   LoadingSubtitle = "by Shoutdown888",
+   Name = "Premium Script Hub",
+   LoadingTitle = "Access Granted",
+   LoadingSubtitle = "by YourName",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = nil,
-      FileName = "Shoutdown_Config"
+      FileName = "PremiumConfig"
    },
    Discord = {
       Enabled = false,
@@ -131,15 +130,15 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("🏠 Main", 4483362458)
 local MainSection = MainTab:CreateSection("Premium Features")
 
-MainTab:CreateLabel("✓ Admin Access Active")
-MainTab:CreateLabel("🔒 Protected by Shoutdown888")
+MainTab:CreateLabel("✓ Whitelist Access Active")
+MainTab:CreateLabel("🔒 Protected Script")
 
 MainTab:CreateButton({
-   Name = "🚀 Premium Feature 1",
+   Name = "🚀 Feature 1",
    Callback = function()
       Rayfield:Notify({
          Title = "Feature Activated",
-         Content = "Premium Feature 1 is now active!",
+         Content = "Feature 1 is now active!",
          Duration = 3,
          Image = 4483362458,
       })
@@ -147,11 +146,11 @@ MainTab:CreateButton({
 })
 
 MainTab:CreateButton({
-   Name = "⚡ Premium Feature 2",
+   Name = "⚡ Feature 2",
    Callback = function()
       Rayfield:Notify({
          Title = "Feature Activated",
-         Content = "Premium Feature 2 is now active!",
+         Content = "Feature 2 is now active!",
          Duration = 3,
          Image = 4483362458,
       })
@@ -209,11 +208,10 @@ SettingsTab:CreateSlider({
 
 -- Info Tab
 local InfoTab = Window:CreateTab("ℹ️ Info", 4483362458)
-local InfoSection = InfoTab:CreateSection("System Information")
+local InfoSection = InfoTab:CreateSection("User Information")
 
 InfoTab:CreateLabel("Username: " .. LocalPlayer.Name)
 InfoTab:CreateLabel("UserID: " .. LocalPlayer.UserId)
-InfoTab:CreateLabel("Access Level: 🔑 ADMIN")
+InfoTab:CreateLabel("Access Level: ✓ WHITELISTED")
 InfoTab:CreateLabel("Version: 1.0.0")
-InfoTab:CreateLabel("Status: ✓ Protected Original")
-InfoTab:CreateLabel("© 2025 Shoutdown888")
+InfoTab:CreateLabel("Status: Protected Original")
