@@ -1,6 +1,6 @@
 -- ═══════════════════════════════════════════════════════
--- 🔐 PROTECTED SCRIPT - down.lua
--- Whitelist Authentication Required
+-- 🔐 PROTECTED SCRIPT v2.0 - down.lua
+-- Optimized for obfuscation
 -- Upload ke: github.com/Shoutdown888/down/main/down.lua
 -- ═══════════════════════════════════════════════════════
 
@@ -11,63 +11,54 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 local function notify(title, text, duration)
-    game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = title,
-        Text = text,
-        Duration = duration or 5,
-    })
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = title,
+            Text = text,
+            Duration = duration or 5,
+        })
+    end)
 end
-
--- ═══════════════════════════════════════════════════════
--- WHITELIST CHECK - DO NOT REMOVE
--- ═══════════════════════════════════════════════════════
 
 print("🔐 Loading Protected Script...")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
-local function fetchWhitelist()
-    local success, result = pcall(function()
-        return HttpService:JSONDecode(game:HttpGet(WHITELIST_URL))
-    end)
-    if success then
-        return result.whitelist or result
-    else
-        return nil
-    end
-end
+-- Fetch whitelist
+local whitelist = nil
+local fetchSuccess = pcall(function()
+    local response = game:HttpGet(WHITELIST_URL)
+    local decoded = HttpService:JSONDecode(response)
+    whitelist = decoded.whitelist or decoded
+end)
 
-local function isWhitelisted(username, whitelist)
-    if not whitelist then return false end
-    for _, whitelistedUser in pairs(whitelist) do
-        if string.lower(whitelistedUser) == string.lower(username) then
-            return true
-        end
-    end
-    return false
-end
-
-local whitelist = fetchWhitelist()
-
-if not whitelist then
-    notify("❌ Error", "Cannot load whitelist", 5)
-    LocalPlayer:Kick("Authentication Error: Cannot verify whitelist")
+-- Check if whitelist loaded
+if not fetchSuccess or not whitelist then
+    print("❌ Cannot load whitelist")
+    notify("❌ Error", "Authentication failed", 5)
+    wait(2)
+    LocalPlayer:Kick("Authentication Error: Cannot load whitelist")
     return
 end
 
-if not isWhitelisted(LocalPlayer.Name, whitelist) then
+-- Check if user whitelisted
+local isWhitelisted = false
+for _, user in pairs(whitelist) do
+    if string.lower(user) == string.lower(LocalPlayer.Name) then
+        isWhitelisted = true
+        break
+    end
+end
+
+if not isWhitelisted then
     print("❌ ACCESS DENIED")
     print("User: " .. LocalPlayer.Name)
-    print("Status: NOT WHITELISTED")
-    notify("❌ Access Denied", "You are not whitelisted!", 5)
-    wait(1)
-    LocalPlayer:Kick("Access Denied: Not whitelisted. Contact admin.")
+    notify("❌ Access Denied", "Not whitelisted!", 5)
+    wait(2)
+    LocalPlayer:Kick("Access Denied: You are not whitelisted")
     return
 end
 
--- ═══════════════════════════════════════════════════════
--- AUTHENTICATED - LOADING FEATURES
--- ═══════════════════════════════════════════════════════
-
+-- Authentication passed
 print("✅ Authentication Successful")
 print("User: " .. LocalPlayer.Name)
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -75,152 +66,187 @@ print("━━━━━━━━━━━━━━━━━━━━━━━━�
 wait(0.5)
 
 print("═══════════════════════════════════════════════════════")
-print("🎮 SCRIPT LOADED")
+print("🎮 LOADING SCRIPT FEATURES")
 print("═══════════════════════════════════════════════════════")
 
-notify("✅ Authenticated", "Welcome " .. LocalPlayer.Name, 5)
+notify("✅ Authenticated", "Loading features...", 3)
 
--- ESP
-local ESPEnabled = true
-local function createESP(player)
-    if player.Character and player ~= LocalPlayer then
-        local highlight = Instance.new("Highlight")
-        highlight.Parent = player.Character
-        highlight.FillColor = Color3.fromRGB(255, 0, 0)
-        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-        highlight.FillTransparency = 0.5
-        highlight.OutlineTransparency = 0
-        player.CharacterAdded:Connect(function(char)
-            wait(0.1)
-            highlight.Parent = char
-        end)
+-- ESP Feature
+local function setupESP()
+    local function createESP(player)
+        if player.Character and player ~= LocalPlayer then
+            pcall(function()
+                local highlight = Instance.new("Highlight")
+                highlight.Parent = player.Character
+                highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.FillTransparency = 0.5
+                highlight.OutlineTransparency = 0
+                
+                player.CharacterAdded:Connect(function(char)
+                    wait(0.1)
+                    if highlight then
+                        highlight.Parent = char
+                    end
+                end)
+            end)
+        end
     end
-end
-
-if ESPEnabled then
-    print("🔍 ESP: Enabled")
+    
     for _, player in pairs(Players:GetPlayers()) do
         createESP(player)
     end
+    
     Players.PlayerAdded:Connect(function(player)
         player.CharacterAdded:Connect(function()
             wait(0.1)
             createESP(player)
         end)
     end)
+    
+    print("🔍 ESP: Enabled")
 end
 
 -- Speed Boost
-local SpeedBoost = 50
-if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-    LocalPlayer.Character.Humanoid.WalkSpeed = SpeedBoost
-    print("🏃 Speed: " .. SpeedBoost)
-end
-LocalPlayer.CharacterAdded:Connect(function(char)
-    wait(0.1)
-    if char:FindFirstChild("Humanoid") then
-        char.Humanoid.WalkSpeed = SpeedBoost
+local function setupSpeed()
+    local speed = 50
+    
+    local function setSpeed(char)
+        if char:FindFirstChild("Humanoid") then
+            char.Humanoid.WalkSpeed = speed
+        end
     end
-end)
+    
+    if LocalPlayer.Character then
+        setSpeed(LocalPlayer.Character)
+    end
+    
+    LocalPlayer.CharacterAdded:Connect(function(char)
+        wait(0.1)
+        setSpeed(char)
+    end)
+    
+    print("🏃 Speed Boost: " .. speed)
+end
 
 -- Infinite Jump
-local InfiniteJumpEnabled = true
-if InfiniteJumpEnabled then
-    print("🦘 Infinite Jump: Enabled")
+local function setupInfiniteJump()
     local UserInputService = game:GetService("UserInputService")
+    
     UserInputService.JumpRequest:Connect(function()
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
         end
     end)
+    
+    print("🦘 Infinite Jump: Enabled")
 end
 
 -- Noclip
-local NoclipEnabled = false
-local function noclip()
-    if LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.CanCollide then
-                part.CanCollide = false
+local function setupNoclip()
+    local noclipEnabled = false
+    
+    local function noclip()
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.CanCollide then
+                    part.CanCollide = false
+                end
             end
         end
     end
+    
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.N then
+            noclipEnabled = not noclipEnabled
+            notify("Noclip", noclipEnabled and "Enabled" or "Disabled", 2)
+            print("👻 Noclip: " .. (noclipEnabled and "Enabled" or "Disabled"))
+        end
+    end)
+    
+    game:GetService("RunService").Stepped:Connect(function()
+        if noclipEnabled then
+            noclip()
+        end
+    end)
 end
 
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.N then
-        NoclipEnabled = not NoclipEnabled
-        notify("Noclip", NoclipEnabled and "Enabled" or "Disabled", 2)
-        print("👻 Noclip: " .. (NoclipEnabled and "Enabled" or "Disabled"))
-    end
-end)
-
-game:GetService("RunService").Stepped:Connect(function()
-    if NoclipEnabled then
-        noclip()
-    end
-end)
-
 -- God Mode
-local GodModeEnabled = false
-game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.G then
-        GodModeEnabled = not GodModeEnabled
-        if GodModeEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.MaxHealth = math.huge
-            LocalPlayer.Character.Humanoid.Health = math.huge
-        elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid.MaxHealth = 100
-            LocalPlayer.Character.Humanoid.Health = 100
+local function setupGodMode()
+    local godEnabled = false
+    
+    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.G then
+            godEnabled = not godEnabled
+            
+            if godEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.MaxHealth = math.huge
+                LocalPlayer.Character.Humanoid.Health = math.huge
+            elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+                LocalPlayer.Character.Humanoid.MaxHealth = 100
+                LocalPlayer.Character.Humanoid.Health = 100
+            end
+            
+            notify("God Mode", godEnabled and "Enabled" or "Disabled", 2)
+            print("⚡ God Mode: " .. (godEnabled and "Enabled" or "Disabled"))
         end
-        notify("God Mode", GodModeEnabled and "Enabled" or "Disabled", 2)
-        print("⚡ God Mode: " .. (GodModeEnabled and "Enabled" or "Disabled"))
-    end
-end)
+    end)
+end
 
--- GUI
-local ScreenGui = Instance.new("ScreenGui")
-local Frame = Instance.new("Frame")
-local Title = Instance.new("TextLabel")
-local Status = Instance.new("TextLabel")
+-- Setup GUI
+local function setupGUI()
+    pcall(function()
+        local ScreenGui = Instance.new("ScreenGui")
+        local Frame = Instance.new("Frame")
+        local Title = Instance.new("TextLabel")
+        local Status = Instance.new("TextLabel")
+        
+        ScreenGui.Parent = game.CoreGui
+        ScreenGui.Name = "ScriptGUI_" .. math.random(1000,9999)
+        ScreenGui.ResetOnSpawn = false
+        
+        Frame.Parent = ScreenGui
+        Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+        Frame.BorderSizePixel = 2
+        Frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
+        Frame.Position = UDim2.new(0.01, 0, 0.35, 0)
+        Frame.Size = UDim2.new(0, 220, 0, 140)
+        Frame.Active = true
+        Frame.Draggable = true
+        
+        Title.Parent = Frame
+        Title.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+        Title.BorderSizePixel = 0
+        Title.Size = UDim2.new(1, 0, 0, 35)
+        Title.Font = Enum.Font.GothamBold
+        Title.Text = "✅ AUTHENTICATED"
+        Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Title.TextSize = 14
+        
+        Status.Parent = Frame
+        Status.BackgroundTransparency = 1
+        Status.Position = UDim2.new(0, 8, 0, 40)
+        Status.Size = UDim2.new(1, -16, 1, -45)
+        Status.Font = Enum.Font.Gotham
+        Status.Text = "👤 " .. LocalPlayer.Name .. "\n🔐 WHITELISTED\n\n✅ All Features\n\nN: Noclip\nG: God Mode"
+        Status.TextColor3 = Color3.fromRGB(255, 255, 255)
+        Status.TextSize = 10
+        Status.TextYAlignment = Enum.TextYAlignment.Top
+        Status.TextXAlignment = Enum.TextXAlignment.Left
+    end)
+end
 
-ScreenGui.Parent = game.CoreGui
-ScreenGui.Name = "ScriptGUI"
-ScreenGui.ResetOnSpawn = false
+-- Load all features
+pcall(setupESP)
+pcall(setupSpeed)
+pcall(setupInfiniteJump)
+pcall(setupNoclip)
+pcall(setupGodMode)
+pcall(setupGUI)
 
-Frame.Parent = ScreenGui
-Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-Frame.BorderSizePixel = 2
-Frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
-Frame.Position = UDim2.new(0.01, 0, 0.35, 0)
-Frame.Size = UDim2.new(0, 220, 0, 140)
-Frame.Active = true
-Frame.Draggable = true
-
-Title.Parent = Frame
-Title.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-Title.BorderSizePixel = 0
-Title.Size = UDim2.new(1, 0, 0, 35)
-Title.Font = Enum.Font.GothamBold
-Title.Text = "✅ AUTHENTICATED"
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 14
-
-Status.Parent = Frame
-Status.BackgroundTransparency = 1
-Status.Position = UDim2.new(0, 8, 0, 40)
-Status.Size = UDim2.new(1, -16, 1, -45)
-Status.Font = Enum.Font.Gotham
-Status.Text = "👤 " .. LocalPlayer.Name .. "\n🔐 WHITELISTED\n\n✅ ESP\n✅ Speed Boost\n✅ Infinite Jump\n\nN: Noclip\nG: God Mode"
-Status.TextColor3 = Color3.fromRGB(255, 255, 255)
-Status.TextSize = 10
-Status.TextYAlignment = Enum.TextYAlignment.Top
-Status.TextXAlignment = Enum.TextXAlignment.Left
-
-wait(1)
 print("═══════════════════════════════════════════════════════")
-print("✨ Script by: Shoutdown888")
+print("✨ All Features Loaded")
 print("🔐 Status: Protected & Authenticated")
 print("═══════════════════════════════════════════════════════")
 
-notify("🎉 Ready!", "All features active", 3)
+notify("🎉 Ready!", "Script loaded successfully", 3)
