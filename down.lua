@@ -8,14 +8,8 @@ local LocalPlayer = Players.LocalPlayer
 -- Whitelist URL (ubah sesuai kebutuhan)
 local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/main/whitelist.json"
 
--- Anti-Tamper Protection
-local _checkedWhitelist = false
-
 -- Function Check Whitelist
 local function CheckWhitelist()
-    if _checkedWhitelist then return false end
-    _checkedWhitelist = true
-    
     local success, response = pcall(function()
         return game:HttpGet(WhitelistURL)
     end)
