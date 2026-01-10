@@ -5,6 +5,7 @@ local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
+-- Whitelist URL (Admin Only)
 local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/refs/heads/main/whitelist.json"
 
 -- Anti-Tamper Protection
@@ -22,12 +23,11 @@ local function CheckWhitelist()
     
     if success then
         local data = HttpService:JSONDecode(response)
-        local userID = tostring(LocalPlayer.UserId)
         local username = LocalPlayer.Name
         
         if data.User then
             for _, user in pairs(data.User) do
-                if user.userid == userID or user.username == username then
+                if user.username == username then
                     return true
                 end
             end
