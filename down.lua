@@ -1,252 +1,220 @@
--- ═══════════════════════════════════════════════════════
--- 🔐 PROTECTED SCRIPT v2.0 - down.lua
--- Optimized for obfuscation
--- Upload ke: github.com/Shoutdown888/down/main/down.lua
--- ═══════════════════════════════════════════════════════
-
-local WHITELIST_URL = "https://raw.githubusercontent.com/Shoutdown888/shout/refs/heads/main/whitelist.json"
+-- SCRIPT A - ORIGINAL VERSION (PROTECTED)
+-- Upload ini ke: https://raw.githubusercontent.com/Shoutdown888/down/refs/heads/main/down.lua
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
-local function notify(title, text, duration)
-    pcall(function()
-        game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = title,
-            Text = text,
-            Duration = duration or 5,
-        })
-    end)
-end
+-- Whitelist URL (Admin Only)
+local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/refs/heads/main/whitelist.json"
 
-print("🔐 Loading Protected Script...")
-print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+-- Anti-Tamper Protection
+local _originalHttpGet = game.HttpGet
+local _checkedWhitelist = false
 
--- Fetch whitelist
-local whitelist = nil
-local fetchSuccess = pcall(function()
-    local response = game:HttpGet(WHITELIST_URL)
-    local decoded = HttpService:JSONDecode(response)
-    whitelist = decoded.whitelist or decoded
-end)
-
--- Check if whitelist loaded
-if not fetchSuccess or not whitelist then
-    print("❌ Cannot load whitelist")
-    notify("❌ Error", "Authentication failed", 5)
-    wait(2)
-    LocalPlayer:Kick("Authentication Error: Cannot load whitelist")
-    return
-end
-
--- Check if user whitelisted
-local isWhitelisted = false
-for _, user in pairs(whitelist) do
-    if string.lower(user) == string.lower(LocalPlayer.Name) then
-        isWhitelisted = true
-        break
-    end
-end
-
-if not isWhitelisted then
-    print("❌ ACCESS DENIED")
-    print("User: " .. LocalPlayer.Name)
-    notify("❌ Access Denied", "Not whitelisted!", 5)
-    wait(2)
-    LocalPlayer:Kick("Access Denied: You are not whitelisted")
-    return
-end
-
--- Authentication passed
-print("✅ Authentication Successful")
-print("User: " .. LocalPlayer.Name)
-print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
-wait(0.5)
-
-print("═══════════════════════════════════════════════════════")
-print("🎮 LOADING SCRIPT FEATURES")
-print("═══════════════════════════════════════════════════════")
-
-notify("✅ Authenticated", "Loading features...", 3)
-
--- ESP Feature
-local function setupESP()
-    local function createESP(player)
-        if player.Character and player ~= LocalPlayer then
-            pcall(function()
-                local highlight = Instance.new("Highlight")
-                highlight.Parent = player.Character
-                highlight.FillColor = Color3.fromRGB(255, 0, 0)
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.FillTransparency = 0.5
-                highlight.OutlineTransparency = 0
-                
-                player.CharacterAdded:Connect(function(char)
-                    wait(0.1)
-                    if highlight then
-                        highlight.Parent = char
-                    end
-                end)
-            end)
-        end
-    end
+-- Fungsi Check Whitelist
+local function CheckWhitelist()
+    if _checkedWhitelist then return false end
+    _checkedWhitelist = true
     
-    for _, player in pairs(Players:GetPlayers()) do
-        createESP(player)
-    end
-    
-    Players.PlayerAdded:Connect(function(player)
-        player.CharacterAdded:Connect(function()
-            wait(0.1)
-            createESP(player)
-        end)
+    local success, response = pcall(function()
+        return _originalHttpGet(game, WhitelistURL)
     end)
     
-    print("🔍 ESP: Enabled")
-end
-
--- Speed Boost
-local function setupSpeed()
-    local speed = 50
-    
-    local function setSpeed(char)
-        if char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = speed
-        end
-    end
-    
-    if LocalPlayer.Character then
-        setSpeed(LocalPlayer.Character)
-    end
-    
-    LocalPlayer.CharacterAdded:Connect(function(char)
-        wait(0.1)
-        setSpeed(char)
-    end)
-    
-    print("🏃 Speed Boost: " .. speed)
-end
-
--- Infinite Jump
-local function setupInfiniteJump()
-    local UserInputService = game:GetService("UserInputService")
-    
-    UserInputService.JumpRequest:Connect(function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-            LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end)
-    
-    print("🦘 Infinite Jump: Enabled")
-end
-
--- Noclip
-local function setupNoclip()
-    local noclipEnabled = false
-    
-    local function noclip()
-        if LocalPlayer.Character then
-            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
-                if part:IsA("BasePart") and part.CanCollide then
-                    part.CanCollide = false
+    if success then
+        local data = HttpService:JSONDecode(response)
+        local userID = tostring(LocalPlayer.UserId)
+        local username = LocalPlayer.Name
+        
+        if data.admins then
+            for _, admin in pairs(data.admins) do
+                if admin.userid == userID or admin.username == username then
+                    return true
                 end
             end
         end
     end
     
-    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.N then
-            noclipEnabled = not noclipEnabled
-            notify("Noclip", noclipEnabled and "Enabled" or "Disabled", 2)
-            print("👻 Noclip: " .. (noclipEnabled and "Enabled" or "Disabled"))
-        end
-    end)
+    return false
+end
+
+-- Loading Screen
+local function ShowAuthScreen(status, color, message)
+    local ScreenGui = Instance.new("ScreenGui")
+    ScreenGui.Name = "AuthScreen_" .. math.random(1000, 9999)
+    ScreenGui.Parent = game.CoreGui
+    ScreenGui.ResetOnSpawn = false
     
-    game:GetService("RunService").Stepped:Connect(function()
-        if noclipEnabled then
-            noclip()
-        end
-    end)
-end
-
--- God Mode
-local function setupGodMode()
-    local godEnabled = false
+    local Frame = Instance.new("Frame")
+    Frame.Size = UDim2.new(1, 0, 1, 0)
+    Frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Frame.BorderSizePixel = 0
+    Frame.Parent = ScreenGui
     
-    game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
-        if not gameProcessed and input.KeyCode == Enum.KeyCode.G then
-            godEnabled = not godEnabled
-            
-            if godEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.MaxHealth = math.huge
-                LocalPlayer.Character.Humanoid.Health = math.huge
-            elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.MaxHealth = 100
-                LocalPlayer.Character.Humanoid.Health = 100
-            end
-            
-            notify("God Mode", godEnabled and "Enabled" or "Disabled", 2)
-            print("⚡ God Mode: " .. (godEnabled and "Enabled" or "Disabled"))
-        end
-    end)
+    local Title = Instance.new("TextLabel")
+    Title.Size = UDim2.new(0, 500, 0, 60)
+    Title.Position = UDim2.new(0.5, -250, 0.4, 0)
+    Title.BackgroundTransparency = 1
+    Title.Text = status
+    Title.TextColor3 = color
+    Title.TextSize = 32
+    Title.Font = Enum.Font.GothamBold
+    Title.Parent = Frame
+    
+    local SubTitle = Instance.new("TextLabel")
+    SubTitle.Size = UDim2.new(0, 500, 0, 30)
+    SubTitle.Position = UDim2.new(0.5, -250, 0.48, 0)
+    SubTitle.BackgroundTransparency = 1
+    SubTitle.Text = "🔒 PROTECTED BY SHOUTDOWN"
+    SubTitle.TextColor3 = Color3.fromRGB(100, 100, 255)
+    SubTitle.TextSize = 16
+    SubTitle.Font = Enum.Font.GothamBold
+    SubTitle.Parent = Frame
+    
+    local Message = Instance.new("TextLabel")
+    Message.Size = UDim2.new(0, 500, 0, 40)
+    Message.Position = UDim2.new(0.5, -250, 0.53, 0)
+    Message.BackgroundTransparency = 1
+    Message.Text = message
+    Message.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Message.TextSize = 18
+    Message.Font = Enum.Font.Gotham
+    Message.Parent = Frame
+    
+    return ScreenGui
 end
 
--- Setup GUI
-local function setupGUI()
-    pcall(function()
-        local ScreenGui = Instance.new("ScreenGui")
-        local Frame = Instance.new("Frame")
-        local Title = Instance.new("TextLabel")
-        local Status = Instance.new("TextLabel")
-        
-        ScreenGui.Parent = game.CoreGui
-        ScreenGui.Name = "ScriptGUI_" .. math.random(1000,9999)
-        ScreenGui.ResetOnSpawn = false
-        
-        Frame.Parent = ScreenGui
-        Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-        Frame.BorderSizePixel = 2
-        Frame.BorderColor3 = Color3.fromRGB(0, 255, 0)
-        Frame.Position = UDim2.new(0.01, 0, 0.35, 0)
-        Frame.Size = UDim2.new(0, 220, 0, 140)
-        Frame.Active = true
-        Frame.Draggable = true
-        
-        Title.Parent = Frame
-        Title.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-        Title.BorderSizePixel = 0
-        Title.Size = UDim2.new(1, 0, 0, 35)
-        Title.Font = Enum.Font.GothamBold
-        Title.Text = "✅ AUTHENTICATED"
-        Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Title.TextSize = 14
-        
-        Status.Parent = Frame
-        Status.BackgroundTransparency = 1
-        Status.Position = UDim2.new(0, 8, 0, 40)
-        Status.Size = UDim2.new(1, -16, 1, -45)
-        Status.Font = Enum.Font.Gotham
-        Status.Text = "👤 " .. LocalPlayer.Name .. "\n🔐 WHITELISTED\n\n✅ All Features\n\nN: Noclip\nG: God Mode"
-        Status.TextColor3 = Color3.fromRGB(255, 255, 255)
-        Status.TextSize = 10
-        Status.TextYAlignment = Enum.TextYAlignment.Top
-        Status.TextXAlignment = Enum.TextXAlignment.Left
-    end)
+-- Authentication Process
+local AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Verifying admin access...")
+wait(1.5)
+
+AuthScreen:Destroy()
+AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking whitelist database...")
+wait(1.5)
+
+local isWhitelisted = CheckWhitelist()
+
+if not isWhitelisted then
+    AuthScreen:Destroy()
+    local DeniedScreen = ShowAuthScreen("❌ ACCESS DENIED", Color3.fromRGB(255, 0, 0), "Admin access required!\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name)
+    wait(3)
+    DeniedScreen:Destroy()
+    LocalPlayer:Kick("❌ ACCESS DENIED - ADMIN ONLY\n\n🔒 This script is protected\nUserID: " .. LocalPlayer.UserId .. "\nUsername: " .. LocalPlayer.Name .. "\n\n© Shoutdown888")
+    return
 end
 
--- Load all features
-pcall(setupESP)
-pcall(setupSpeed)
-pcall(setupInfiniteJump)
-pcall(setupNoclip)
-pcall(setupGodMode)
-pcall(setupGUI)
+AuthScreen:Destroy()
+local GrantedScreen = ShowAuthScreen("✓ ACCESS GRANTED", Color3.fromRGB(0, 255, 0), "Welcome, Admin!")
+wait(1.5)
+GrantedScreen:Destroy()
 
-print("═══════════════════════════════════════════════════════")
-print("✨ All Features Loaded")
-print("🔐 Status: Protected & Authenticated")
-print("═══════════════════════════════════════════════════════")
+-- Load Main Script
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-notify("🎉 Ready!", "Script loaded successfully", 3)
+local Window = Rayfield:CreateWindow({
+   Name = "Shoutdown Script - Premium",
+   LoadingTitle = "Admin Access Granted",
+   LoadingSubtitle = "by Shoutdown888",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = nil,
+      FileName = "Shoutdown_Config"
+   },
+   Discord = {
+      Enabled = false,
+      Invite = "noinvitelink",
+      RememberJoins = true
+   },
+   KeySystem = false
+})
+
+-- Main Tab
+local MainTab = Window:CreateTab("🏠 Main", 4483362458)
+local MainSection = MainTab:CreateSection("Premium Features")
+
+MainTab:CreateLabel("✓ Admin Access Active")
+MainTab:CreateLabel("🔒 Protected by Shoutdown888")
+
+MainTab:CreateButton({
+   Name = "🚀 Premium Feature 1",
+   Callback = function()
+      Rayfield:Notify({
+         Title = "Feature Activated",
+         Content = "Premium Feature 1 is now active!",
+         Duration = 3,
+         Image = 4483362458,
+      })
+   end,
+})
+
+MainTab:CreateButton({
+   Name = "⚡ Premium Feature 2",
+   Callback = function()
+      Rayfield:Notify({
+         Title = "Feature Activated",
+         Content = "Premium Feature 2 is now active!",
+         Duration = 3,
+         Image = 4483362458,
+      })
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "🔥 Auto Farm",
+   CurrentValue = false,
+   Flag = "AutoFarm",
+   Callback = function(Value)
+      Rayfield:Notify({
+         Title = "Auto Farm",
+         Content = "Auto Farm: " .. tostring(Value),
+         Duration = 2,
+         Image = 4483362458,
+      })
+   end,
+})
+
+MainTab:CreateToggle({
+   Name = "💎 Auto Collect",
+   CurrentValue = false,
+   Flag = "AutoCollect",
+   Callback = function(Value)
+      print("Auto Collect: " .. tostring(Value))
+   end,
+})
+
+-- Settings Tab
+local SettingsTab = Window:CreateTab("⚙️ Settings", 4483362458)
+local SettingsSection = SettingsTab:CreateSection("Configuration")
+
+SettingsTab:CreateSlider({
+   Name = "Speed Multiplier",
+   Range = {1, 10},
+   Increment = 0.5,
+   CurrentValue = 1,
+   Flag = "SpeedSlider",
+   Callback = function(Value)
+      print("Speed set to: " .. Value .. "x")
+   end,
+})
+
+SettingsTab:CreateSlider({
+   Name = "Distance",
+   Range = {10, 100},
+   Increment = 5,
+   CurrentValue = 50,
+   Flag = "DistanceSlider",
+   Callback = function(Value)
+      print("Distance set to: " .. Value)
+   end,
+})
+
+-- Info Tab
+local InfoTab = Window:CreateTab("ℹ️ Info", 4483362458)
+local InfoSection = InfoTab:CreateSection("System Information")
+
+InfoTab:CreateLabel("Username: " .. LocalPlayer.Name)
+InfoTab:CreateLabel("UserID: " .. LocalPlayer.UserId)
+InfoTab:CreateLabel("Access Level: 🔑 ADMIN")
+InfoTab:CreateLabel("Version: 1.0.0")
+InfoTab:CreateLabel("Status: ✓ Protected Original")
+InfoTab:CreateLabel("© 2025 Shoutdown888")
