@@ -6,7 +6,7 @@ local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
 -- SECRET ADMIN KEY
-local ADMIN_SECRET_KEY = "ADMIN"
+local ADMIN_SECRET_KEY = "PENASARAN_YAA"
 
 -- Whitelist URL (ubah sesuai kebutuhan)
 local WhitelistURL = "https://raw.githubusercontent.com/Shoutdown888/shout/main/whitelist.json"
