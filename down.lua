@@ -95,7 +95,7 @@ local AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 
 task.wait(1.5)
 
 AuthScreen:Destroy()
-AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking admin key...")
+AuthScreen = ShowAuthScreen("🔐 AUTHENTICATING...", Color3.fromRGB(255, 255, 255), "Checking whitelist...")
 task.wait(0.5)
 
 -- Check Admin Key First
@@ -103,7 +103,7 @@ local hasAdminAccess = CheckAdminKey()
 
 if hasAdminAccess then
     AuthScreen:Destroy()
-    local AdminScreen = ShowAuthScreen("👑 Premium ACCESS", Color3.fromRGB(255, 215, 0), "Admin key verified!")
+    local AdminScreen = ShowAuthScreen("👑 Premium ACCESS", Color3.fromRGB(255, 215, 0), "User verified!")
     task.wait(1.5)
     AdminScreen:Destroy()
 else
